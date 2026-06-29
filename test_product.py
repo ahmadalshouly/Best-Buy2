@@ -1,5 +1,6 @@
 import pytest
-from products import Product
+from products import Product, NonStockedProduct, LimitedProduct
+from promotions import Promotion, SecondHalfPrice, PercentDiscount, ThirdOneFree
 
 
 def test_create_normal_product():
@@ -72,3 +73,90 @@ def test_buy_too_much_raises_exception():
 
     # Ensure quantity was not changed
     assert product.get_quantity() == 5
+
+
+def test_non_stock_product_raises_exception():
+    """Test that non-stock product raises an exception."""
+    product = NonStockedProduct("Windows License", price=125)
+
+    with pytest.raises(ValueError):
+        product.buy(0)
+
+
+def test_limited_product_buy_within_limit():
+    product = LimitedProduct("Shipping", price=10, quantity=100, maximum=1)
+
+    total = product.buy(1)
+
+    assert total == 10.0
+    assert product.get_quantity() == 99
+
+
+def test_limited_product_buy_over_limit_raises_exception():
+    product = LimitedProduct("Shipping", price=10, quantity=100, maximum=1)
+
+    with pytest.raises(ValueError):
+        product.buy(2)
+
+    assert product.get_quantity() == 100
+
+
+def test_set_and_get_promotion():
+    product = Product("Test Product", price=100, quantity=10)
+
+    assert product.get_promotion() is None
+
+    promo = SecondHalfPrice("Second Half Price")
+    product.set_promotion(promo)
+
+    assert product.get_promotion() == promo
+
+
+def test_percent_discount_promotion():
+    product = Product("Test Product", price=100, quantity=10)
+    promo = PercentDiscount("30% Off", 30)
+    product.set_promotion(promo)
+
+    total = product.buy(2)
+
+    assert total == 140.0
+
+
+def test_second_half_price_promotion():
+    product = Product("Test Product", price=100, quantity=10)
+    promo = SecondHalfPrice("Second Half Price")
+    product.set_promotion(promo)
+
+    total = product.buy(3)
+
+    assert total == 250.0
+
+
+def test_third_one_free_promotion():
+    product = Product("Test Product", price=100, quantity=10)
+    promo = ThirdOneFree("3 for 2")
+    product.set_promotion(promo)
+
+    total = product.buy(3)
+
+    assert total == 200.0
+
+
+def test_buy_with_promotion_reduces_quantity():
+    product = Product("Test Product", price=100, quantity=10)
+    promo = PercentDiscount("50% Off", 50)
+    product.set_promotion(promo)
+
+    product.buy(2)
+
+    assert product.get_quantity() == 8
+
+
+def test_remove_promotion():
+    product = Product("Test Product", price=100, quantity=10)
+    product.set_promotion(PercentDiscount("50% Off", 50))
+    product.set_promotion(None)
+
+    total = product.buy(2)
+
+    assert total == 200.0
