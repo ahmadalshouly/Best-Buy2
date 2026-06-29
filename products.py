@@ -60,3 +60,58 @@ class Product:
             self._active = False
 
         return self.price * quantity
+
+
+class NonStockedProduct(Product):
+    """
+    Represents a non-physical product whose quantity is not tracked
+    (e.g. a software license). Quantity is always 0 and stays 0.
+    """
+
+
+    def __init__(self, name, price):
+        super().__init__(name, price, 1)
+        self.quantity = 0
+
+
+    def set_quantity(self, quantity):
+        """ Quantity is always forced to zero for non-stocked products """
+        self.quantity = 0
+
+
+    def buy(self, quantity):
+        """ Buys the product without touching quantity (unlimited stock) """
+        if quantity <= 0:
+            raise ValueError("Purchase quantity must be positive")
+        return self.price * quantity
+
+
+    def show(self):
+        """ Show the product, indicating it is not stock-tracked """
+        print(f"{self.name}, Price: {self.price}, Quantity: Unlimited (Non-Stocked)")
+
+
+class LimitedProduct(Product):
+    """
+    Represents a product that can only be purchased up to a maximum
+    quantity per order (e.g. a one-time shipping fee).
+    """
+
+    def __init__(self, name, price, quantity, maximum):
+        super().__init__(name, price, quantity)
+        self.maximum = maximum
+
+    def buy(self, quantity):
+        """ Buys the product, enforcing the per-order maximum """
+        if quantity > self.maximum:
+            raise ValueError(
+                f"Cannot purchase more than {self.maximum} of '{self.name}' per order"
+            )
+        return super().buy(quantity)
+
+    def show(self):
+        """ Show the product, including its per-order maximum """
+        print(
+            f"{self.name}, Price: {self.price}, Quantity: {self.quantity}, "
+            f"Maximum per order: {self.maximum}"
+        )
